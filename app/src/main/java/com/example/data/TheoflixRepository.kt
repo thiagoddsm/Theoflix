@@ -30,15 +30,15 @@ class TheoflixRepository(private val dao: TheoflixDao) {
      * quanto do documento config/theoflix).
      */
     fun startRealtimeSync() {
-        // 1. Limpa cursos mock legados caso existam
+        // 1. Limpa o banco local e semeia os 6 cursos oficiais imediatamente
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                dao.deleteLegacyMockCourses()
-                dao.deleteLegacyMockModules()
-                // Se a base estiver vazia, semeia com os cursos reais do OikoApp
+                dao.clearAllCourses()
+                dao.clearAllModules()
                 TheoflixDatabase.seedDatabase(dao)
+                Log.d("TheoflixRepo", "Banco Room atualizado com os 6 cursos oficiais!")
             } catch (e: Exception) {
-                Log.e("TheoflixRepo", "Erro ao limpar dados legados: ${e.message}")
+                Log.e("TheoflixRepo", "Erro ao semear banco local: ${e.message}")
             }
         }
 

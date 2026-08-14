@@ -86,6 +86,12 @@ interface TheoflixDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateProgress(progress: UserProgressEntity)
 
+    @Query("DELETE FROM courses")
+    suspend fun clearAllCourses()
+
+    @Query("DELETE FROM modules")
+    suspend fun clearAllModules()
+
     @Query("DELETE FROM courses WHERE id LIKE 'course_%' OR id = 'imersao' OR id = 'membros'")
     suspend fun deleteLegacyMockCourses()
 
