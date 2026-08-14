@@ -130,7 +130,7 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 32.dp)
             ) {
                 Text(
-                    text = "v2.0.0 • IBM OFICIAL (6 CURSOS)",
+                    text = "v2.1.0 • SINCRONIZADO COM OIKO (LIVE)",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp,

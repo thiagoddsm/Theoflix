@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -53,12 +55,16 @@ fun useTheoflixPlayer(
     // Safe lazy initialization of WebView to avoid memory leaks
     val webView = remember {
         WebView(context.applicationContext).apply {
+            webChromeClient = android.webkit.WebChromeClient()
+            webViewClient = android.webkit.WebViewClient()
             settings.javaScriptEnabled = true
             settings.mediaPlaybackRequiresUserGesture = false
             settings.domStorageEnabled = true
             settings.databaseEnabled = true
             settings.useWideViewPort = true
             settings.loadWithOverviewMode = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = true
             settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
             layoutParams = ViewGroup.LayoutParams(
@@ -104,7 +110,7 @@ fun useTheoflixPlayer(
             <body>
                 <iframe 
                     id="player"
-                    src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1&origin=https://ibmanha.com.br"
+                    src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowfullscreen>
                 </iframe>
@@ -472,6 +478,28 @@ fun PlayerScreen(
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(top = 2.dp)
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(activeModule.videoUrl))
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    // fallback
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFCC0000)),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Abrir no App do YouTube", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
 
                     // Complete/Conclude action buttons trigger

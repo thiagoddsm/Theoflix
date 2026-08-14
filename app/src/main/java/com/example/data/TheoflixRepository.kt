@@ -195,12 +195,90 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                             if (modulesList.isNotEmpty()) {
                                 dao.insertModules(modulesList)
                             }
+                            Log.d("TheoflixRepo", "Sincronizados ${coursesList.size} cursos de config/theoflix!")
                         }
                     }
                 }
             }
         } catch (e: Exception) {
             Log.e("TheoflixRepo", "Erro no listener de config/theoflix: ${e.message}")
+        }
+
+        // 4. Listener para a coleção `courses` (onde os cursos e ementas reais do OikoApp são criados)
+        try {
+            firestore.collection("courses").addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("TheoflixRepo", "Erro ao escutar courses: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && !snapshot.isEmpty) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val coursesList = mutableListOf<Course>()
+                        val modulesList = mutableListOf<ModuleEntity>()
+
+                        for (doc in snapshot.documents) {
+                            val data = doc.data ?: continue
+                            val rawId = (data["linkedTheoflixId"] as? String) ?: doc.id
+                            val courseId = rawId.lowercase().trim()
+                            val title = (data["name"] as? String) ?: (data["title"] as? String) ?: "Curso IBM"
+                            val desc = (data["description"] as? String) ?: ""
+                            val category = (data["ministryName"] as? String) ?: (data["ebdTrack"] as? String) ?: "Doutrina"
+                            val teacher = (data["teacherName"] as? String) ?: "Pastoral IBM"
+                            val duration = (data["duration"] as? String) ?: "4h"
+                            val color = (data["coverImage"] as? String) ?: (data["color"] as? String) ?: "#1D4ED8"
+
+                            coursesList.add(
+                                Course(
+                                    id = courseId,
+                                    title = title,
+                                    description = desc,
+                                    thumbnailColor = color,
+                                    category = category,
+                                    teacher = teacher,
+                                    duration = duration,
+                                    isFavorite = false
+                                )
+                            )
+
+                            val syllabus = data["syllabus"] as? List<Map<String, Any>> ?: emptyList()
+                            syllabus.forEachIndexed { index, modMap ->
+                                val modId = modMap["id"] as? String ?: "${courseId}_${index + 1}"
+                                val modTitle = modMap["title"] as? String ?: "Aula ${index + 1}"
+                                val modDuration = modMap["duration"] as? String ?: "45 min"
+                                val youtubeId = modMap["youtubeId"] as? String ?: modMap["videoId"] as? String ?: ""
+                                val videoUrl = if (youtubeId.isNotBlank()) {
+                                    if (youtubeId.startsWith("http")) youtubeId
+                                    else "https://www.youtube.com/watch?v=$youtubeId"
+                                } else {
+                                    modMap["videoUrl"] as? String ?: "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                                }
+
+                                modulesList.add(
+                                    ModuleEntity(
+                                        id = modId,
+                                        courseId = courseId,
+                                        title = if (modTitle.startsWith("Aula") || modTitle.startsWith("Módulo") || modTitle.startsWith("MODULO")) modTitle else "Aula ${index + 1}: $modTitle",
+                                        duration = modDuration,
+                                        videoUrl = videoUrl,
+                                        completed = false
+                                    )
+                                )
+                            }
+                        }
+
+                        if (coursesList.isNotEmpty()) {
+                            dao.insertCourses(coursesList)
+                        }
+                        if (modulesList.isNotEmpty()) {
+                            dao.insertModules(modulesList)
+                        }
+                        Log.d("TheoflixRepo", "Sincronizados ${coursesList.size} cursos da colecao courses!")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("TheoflixRepo", "Erro ao iniciar listener de courses: ${e.message}")
         }
     }
 
