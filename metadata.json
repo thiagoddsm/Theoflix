@@ -1,0 +1,6 @@
+{
+  "name": "THEOFLIX",
+  "description": "Uma plataforma cristã de ensino e discipulado no estilo Netflix + LMS, focada em igrejas, líderes e membros.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
