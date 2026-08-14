@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -328,6 +331,8 @@ fun ModuleLessonItem(
     module: com.example.data.ModuleEntity,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -337,65 +342,114 @@ fun ModuleLessonItem(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF141414)),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.03f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(14.dp)
         ) {
-            // Lecture index or completed hook status
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(if (module.completed) GoldPrimary else Color.White.copy(alpha = 0.05f)),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (module.completed) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Concluída",
-                        tint = Color.Black,
-                        modifier = Modifier.size(18.dp)
-                    )
-                } else {
+                // Lecture index or completed hook status
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(if (module.completed) GoldPrimary else Color.White.copy(alpha = 0.05f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (module.completed) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Concluída",
+                            tint = Color.Black,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    } else {
+                        Text(
+                            text = index.toString(),
+                            color = Color.LightGray,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
-                        text = index.toString(),
-                        color = Color.LightGray,
+                        text = module.title,
+                        color = Color.White,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Text(
+                        text = "Duração: ${module.duration}",
+                        color = Color.Gray,
+                        fontSize = 11.sp
+                    )
+                }
+
+                // Simple visual icon based on watch states
+                Icon(
+                    imageVector = if (module.completed) Icons.Default.PlayCircleFilled else Icons.Default.PlayArrow,
+                    contentDescription = "Assistir",
+                    tint = if (module.completed) GoldPrimary else Color.White.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            // Material de Apoio (PDF / Apostila) se cadastrado
+            if (!module.materialUrl.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF1E293B))
+                        .clickable {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(module.materialUrl))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                // fallback
+                            }
+                        }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = "Material",
+                        tint = Color(0xFF38BDF8),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = module.materialName ?: "Apostila / Material de Apoio (PDF)",
+                        color = Color(0xFF38BDF8),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.OpenInNew,
+                        contentDescription = null,
+                        tint = Color(0xFF38BDF8),
+                        modifier = Modifier.size(12.dp)
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = module.title,
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    text = "Duração: ${module.duration}",
-                    color = Color.Gray,
-                    fontSize = 11.sp
-                )
-            }
-
-            // Simple visual icon based on watch states
-            Icon(
-                imageVector = if (module.completed) Icons.Default.PlayCircleFilled else Icons.Default.PlayArrow,
-                contentDescription = "Assistir",
-                tint = if (module.completed) GoldPrimary else Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(24.dp)
-            )
         }
     }
 }

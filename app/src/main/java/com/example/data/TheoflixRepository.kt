@@ -253,6 +253,10 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                                 } else {
                                     modMap["videoUrl"] as? String ?: "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                                 }
+                                val materialUrl = modMap["materialUrl"] as? String
+                                val materialName = modMap["materialName"] as? String
+                                val quiz = modMap["quiz"] as? Map<String, Any>
+                                val quizJson = if (quiz != null) org.json.JSONObject(quiz).toString() else null
 
                                 modulesList.add(
                                     ModuleEntity(
@@ -261,7 +265,10 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                                         title = if (modTitle.startsWith("Aula") || modTitle.startsWith("Módulo") || modTitle.startsWith("MODULO")) modTitle else "Aula ${index + 1}: $modTitle",
                                         duration = modDuration,
                                         videoUrl = videoUrl,
-                                        completed = false
+                                        completed = false,
+                                        materialUrl = materialUrl,
+                                        materialName = materialName,
+                                        quizJson = quizJson
                                     )
                                 )
                             }
@@ -273,7 +280,7 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                         if (modulesList.isNotEmpty()) {
                             dao.insertModules(modulesList)
                         }
-                        Log.d("TheoflixRepo", "Sincronizados ${coursesList.size} cursos da colecao courses!")
+                        Log.d("TheoflixRepo", "Sincronizados ${coursesList.size} cursos da colecao courses com materiais e quizzes!")
                     }
                 }
             }
@@ -383,15 +390,17 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                     .document("${currentUser.uid}_${courseId}_${moduleId}")
                     .set(watchData, SetOptions.merge())
 
-                // Atualiza o documento de jornada do usuário
+                // Atualiza o documento de jornada do usuário e a presença oficial no OikoApp
                 if (completed) {
+                    val youtubeId = if (moduleId.contains("_")) moduleId.substringAfterLast("_") else moduleId
                     firestore.collection("users")
                         .document(currentUser.uid)
                         .set(
                             mapOf(
                                 "journey" to mapOf(
                                     "theoflixModules" to mapOf(moduleId to true),
-                                    "theoflixProgress" to mapOf(courseId to mapOf(moduleId to true))
+                                    "theoflixProgress" to mapOf(courseId to mapOf(moduleId to mapOf("completed" to true, "completedAt" to com.google.firebase.Timestamp.now()))),
+                                    "theoflixAttendance" to mapOf(courseId to mapOf(moduleId to true, youtubeId to true))
                                 )
                             ),
                             SetOptions.merge()

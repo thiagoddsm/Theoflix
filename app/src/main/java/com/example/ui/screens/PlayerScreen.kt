@@ -221,7 +221,47 @@ fun PlayerScreen(
     var isQuizApproved by remember { mutableStateOf(false) }
     var lessonNotes by remember { mutableStateOf("") }
 
-    // --- COMPACT FLOW MODULE LAMBDAS (Declared first to avoid forward-reference compilation errors) ---
+    // Parse dynamic quiz from Firestore
+    data class ParsedQuestion(val question: String, val options: List<String>, val correctIndex: Int)
+    val dynamicQuestions = remember(activeModule.quizJson) {
+        val list = mutableListOf<ParsedQuestion>()
+        try {
+            if (!activeModule.quizJson.isNullOrBlank()) {
+                val obj = org.json.JSONObject(activeModule.quizJson)
+                val enabled = obj.optBoolean("enabled", true)
+                if (enabled) {
+                    val qArr = obj.optJSONArray("questions")
+                    if (qArr != null) {
+                        for (i in 0 until qArr.length()) {
+                            val qObj = qArr.getJSONObject(i)
+                            val qText = qObj.optString("question", "Questão ${i + 1}")
+                            val optArr = qObj.optJSONArray("options")
+                            val options = mutableListOf<String>()
+                            if (optArr != null) {
+                                for (j in 0 until optArr.length()) {
+                                    options.add(optArr.getString(j))
+                                }
+                            }
+                            if (options.isEmpty()) {
+                                options.add("Verdadeiro")
+                                options.add("Falso")
+                            }
+                            val correctIndex = qObj.optInt("correctIndex", 0)
+                            list.add(ParsedQuestion(qText, options, correctIndex))
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // fallback
+        }
+        if (list.isEmpty()) {
+            list.add(ParsedQuestion("1. Qual o foco principal do aprendizado nesta lição?", listOf("Crescimento espiritual e discipulado bíblico", "Apenas memorização mecânica"), 0))
+            list.add(ParsedQuestion("2. Como aplicar os ensinamentos no dia a dia da comunidade?", listOf("Vivendo em amor e pastoreio mútuo", "Isolando-se dos irmãos"), 0))
+        }
+        list
+    }
+
     val resetQuiz = {
         quizSubmitted = false
         quizAnswers = emptyMap()
@@ -236,14 +276,16 @@ fun PlayerScreen(
     }
 
     val submitQuiz = {
-        var score = 0
-        if (quizAnswers[0] == 1) score += 34
-        if (quizAnswers[1] == 0) score += 33
-        if (quizAnswers[2] == 1) score += 33
-
+        var correctCount = 0
+        dynamicQuestions.forEachIndexed { index, q ->
+            if (quizAnswers[index] == q.correctIndex) {
+                correctCount++
+            }
+        }
+        val score = if (dynamicQuestions.isNotEmpty()) (correctCount * 100) / dynamicQuestions.size else 100
         quizScore = score
         quizSubmitted = true
-        if (score >= 67) {
+        if (score >= 60) {
             isQuizApproved = true
             completeEpisode()
         } else {
@@ -674,85 +716,31 @@ fun PlayerScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    // Question 1
-                    Text(
-                        text = "1. Qual deve ser o principal alicerce do ministro de crescimento celular?",
-                        color = Color.LightGray,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    listOf("Autopromoção egoica", "Pastoreio relacional amoroso e bíblico").forEachIndexed { index, option ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { quizAnswers = quizAnswers + (0 to index) }
-                                .padding(vertical = 4.dp)
-                        ) {
-                            RadioButton(
-                                selected = quizAnswers[0] == index,
-                                onClick = { quizAnswers = quizAnswers + (0 to index) },
-                                colors = RadioButtonDefaults.colors(selectedColor = GoldPrimary, unselectedColor = Color.Gray)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = option, color = Color.White, fontSize = 12.sp)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Question 2
-                    Text(
-                        text = "2. Como se dá a multiplicação saudável e abençoada das células?",
-                        color = Color.LightGray,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    listOf("Formando discípulos e novos líderes espirituais", "Dividindo os membros arbitrariamente sem preparo").forEachIndexed { index, option ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { quizAnswers = quizAnswers + (1 to index) }
-                                .padding(vertical = 4.dp)
-                        ) {
-                            RadioButton(
-                                selected = quizAnswers[1] == index,
-                                onClick = { quizAnswers = quizAnswers + (1 to index) },
-                                colors = RadioButtonDefaults.colors(selectedColor = GoldPrimary, unselectedColor = Color.Gray)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = option, color = Color.White, fontSize = 12.sp)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Question 3
-                    Text(
-                        text = "3. Qual o papel do caráter na liderança aprovada teologicamente?",
-                        color = Color.LightGray,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    listOf("É secundário frente às habilidades oratórias", "Essencial para gerar frutos reais e autoridade espiritual").forEachIndexed { index, option ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { quizAnswers = quizAnswers + (2 to index) }
-                                .padding(vertical = 4.dp)
-                        ) {
-                            RadioButton(
-                                selected = quizAnswers[2] == index,
-                                onClick = { quizAnswers = quizAnswers + (2 to index) },
-                                colors = RadioButtonDefaults.colors(selectedColor = GoldPrimary, unselectedColor = Color.Gray)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = option, color = Color.White, fontSize = 12.sp)
+                    // Dynamic Questions Loop
+                    dynamicQuestions.forEachIndexed { qIndex, qItem ->
+                        Text(
+                            text = "${qIndex + 1}. ${qItem.question}",
+                            color = Color.LightGray,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 6.dp, top = if (qIndex > 0) 12.dp else 0.dp)
+                        )
+                        qItem.options.forEachIndexed { optIndex, optionText ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { quizAnswers = quizAnswers + (qIndex to optIndex) }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                RadioButton(
+                                    selected = quizAnswers[qIndex] == optIndex,
+                                    onClick = { quizAnswers = quizAnswers + (qIndex to optIndex) },
+                                    colors = RadioButtonDefaults.colors(selectedColor = GoldPrimary, unselectedColor = Color.Gray)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = optionText, color = Color.White, fontSize = 12.sp)
+                            }
                         }
                     }
 
@@ -762,7 +750,7 @@ fun PlayerScreen(
                     if (quizSubmitted) {
                         if (isQuizApproved) {
                             Text(
-                                text = "Aprovado com Sucesso! Score: $quizScore/100",
+                                text = "Aprovado com Sucesso! Pontuação: $quizScore/100",
                                 color = Color(0xFF4ADE80),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
@@ -770,7 +758,7 @@ fun PlayerScreen(
                             )
                         } else {
                             Text(
-                                text = "Não atingiu o score mínimo de 70%. Seu score: $quizScore/100. Tente novamente!",
+                                text = "Não atingiu o score mínimo de 60%. Seu score: $quizScore/100. Tente novamente!",
                                 color = Color(0xFFEF4444),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
@@ -791,7 +779,7 @@ fun PlayerScreen(
                             onClick = { submitQuiz() },
                             colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary, contentColor = Color.Black),
                             shape = RoundedCornerShape(8.dp),
-                            enabled = quizAnswers.size == 3
+                            enabled = quizAnswers.size == dynamicQuestions.size
                         ) {
                             Text("Enviar Respostas", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }

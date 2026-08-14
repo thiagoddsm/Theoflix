@@ -130,7 +130,7 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 32.dp)
             ) {
                 Text(
-                    text = "v2.1.0 • SINCRONIZADO COM OIKO (LIVE)",
+                    text = "v2.2.0 • PARIDADE TOTAL COM OIKO (QUIZ & PDF)",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp,

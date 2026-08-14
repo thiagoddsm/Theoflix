@@ -36,7 +36,10 @@ data class ModuleEntity(
     val title: String,
     val duration: String,
     val videoUrl: String,
-    val completed: Boolean = false
+    val completed: Boolean = false,
+    val materialUrl: String? = null,
+    val materialName: String? = null,
+    val quizJson: String? = null
 )
 
 @Entity(tableName = "user_progress", primaryKeys = ["courseId", "moduleId"])
@@ -101,7 +104,7 @@ interface TheoflixDao {
 
 @Database(
     entities = [Course::class, ModuleEntity::class, UserProgressEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class TheoflixDatabase : RoomDatabase() {
