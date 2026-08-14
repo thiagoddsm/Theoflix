@@ -22,17 +22,107 @@ class TheoflixRepository(private val dao: TheoflixDao) {
     init {
         // Inicia sincronização em tempo real com o Firestore do OikoApp
         startRealtimeSync()
+        syncUserProfileProgress()
     }
 
     /**
-     * Sincroniza em tempo real os cursos cadastrados no OikoApp (Firestore config/theoflix)
-     * para o banco local Room do Theoflix Android.
+     * Sincroniza em tempo real os cursos do OikoApp (tanto da coleção theoflix_courses
+     * quanto do documento config/theoflix).
      */
     fun startRealtimeSync() {
+        // 1. Limpa cursos mock legados caso existam
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                dao.deleteLegacyMockCourses()
+                dao.deleteLegacyMockModules()
+                // Se a base estiver vazia, semeia com os cursos reais do OikoApp
+                TheoflixDatabase.seedDatabase(dao)
+            } catch (e: Exception) {
+                Log.e("TheoflixRepo", "Erro ao limpar dados legados: ${e.message}")
+            }
+        }
+
+        // 2. Listener para a coleção `theoflix_courses` (onde o TheoFlix Manager do OikoApp salva)
+        try {
+            firestore.collection("theoflix_courses").addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("TheoflixRepo", "Erro ao escutar theoflix_courses: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && !snapshot.isEmpty) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val coursesList = mutableListOf<Course>()
+                        val modulesList = mutableListOf<ModuleEntity>()
+
+                        for (doc in snapshot.documents) {
+                            val data = doc.data ?: continue
+                            val courseId = doc.id
+                            val title = data["title"] as? String ?: "Curso TheoFlix"
+                            val desc = (data["desc"] as? String) ?: (data["description"] as? String) ?: ""
+                            val category = (data["type"] as? String) ?: (data["category"] as? String) ?: "Doutrina"
+                            val teacher = (data["teacher"] as? String) ?: (data["instructor"] as? String) ?: "IBM"
+                            val duration = data["duration"] as? String ?: "4h"
+                            val color = (data["image"] as? String) ?: (data["color"] as? String) ?: "#1D4ED8"
+
+                            coursesList.add(
+                                Course(
+                                    id = courseId,
+                                    title = title,
+                                    description = desc,
+                                    thumbnailColor = color,
+                                    category = category,
+                                    teacher = teacher,
+                                    duration = duration,
+                                    isFavorite = false
+                                )
+                            )
+
+                            val rawEpisodes = data["episodes"] as? List<Map<String, Any>> ?: emptyList()
+                            rawEpisodes.forEachIndexed { index, epMap ->
+                                val epId = epMap["id"] as? String ?: "${courseId}_${index + 1}"
+                                val epTitle = epMap["title"] as? String ?: "Aula ${index + 1}"
+                                val epDuration = epMap["duration"] as? String ?: "30 min"
+                                val youtubeId = epMap["youtubeId"] as? String ?: epMap["videoId"] as? String ?: ""
+                                val videoUrl = if (youtubeId.isNotBlank()) {
+                                    if (youtubeId.startsWith("http")) youtubeId
+                                    else "https://www.youtube.com/watch?v=$youtubeId"
+                                } else {
+                                    epMap["videoUrl"] as? String ?: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                                }
+
+                                modulesList.add(
+                                    ModuleEntity(
+                                        id = epId,
+                                        courseId = courseId,
+                                        title = epTitle,
+                                        duration = epDuration,
+                                        videoUrl = videoUrl,
+                                        completed = false
+                                    )
+                                )
+                            }
+                        }
+
+                        if (coursesList.isNotEmpty()) {
+                            dao.insertCourses(coursesList)
+                        }
+                        if (modulesList.isNotEmpty()) {
+                            dao.insertModules(modulesList)
+                        }
+                        Log.d("TheoflixRepo", "Sincronizados ${coursesList.size} cursos de theoflix_courses!")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("TheoflixRepo", "Erro ao iniciar listener de theoflix_courses: ${e.message}")
+        }
+
+        // 3. Listener para o documento `config/theoflix`
         try {
             firestore.document("config/theoflix").addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    Log.e("TheoflixRepo", "Erro ao sincronizar config/theoflix: ${error.message}")
+                    Log.e("TheoflixRepo", "Erro ao escutar config/theoflix: ${error.message}")
                     return@addSnapshotListener
                 }
 
@@ -46,14 +136,11 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                             coursesRaw.forEach { cMap ->
                                 val courseId = cMap["id"] as? String ?: return@forEach
                                 val title = cMap["title"] as? String ?: "Curso Teológico"
-                                val desc = cMap["desc"] as? String ?: ""
-                                val color = cMap["color"] as? String ?: "blue"
-                                val category = cMap["type"] as? String ?: "Doutrina"
-                                val teacher = cMap["teacher"] as? String ?: "Pastoral"
-
-                                val episodes = cMap["episodes"] as? List<Map<String, Any>> ?: emptyList()
-                                val totalDurationMinutes = episodes.size * 30
-                                val durationStr = if (totalDurationMinutes > 60) "${totalDurationMinutes / 60}h ${totalDurationMinutes % 60}m" else "${totalDurationMinutes}m"
+                                val desc = (cMap["desc"] as? String) ?: (cMap["description"] as? String) ?: ""
+                                val color = (cMap["image"] as? String) ?: (cMap["color"] as? String) ?: "#1D4ED8"
+                                val category = (cMap["type"] as? String) ?: (cMap["category"] as? String) ?: "Doutrina"
+                                val teacher = (cMap["teacher"] as? String) ?: "IBM"
+                                val duration = cMap["duration"] as? String ?: "4h"
 
                                 coursesList.add(
                                     Course(
@@ -63,16 +150,23 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                                         thumbnailColor = color,
                                         category = category,
                                         teacher = teacher,
-                                        duration = durationStr,
+                                        duration = duration,
                                         isFavorite = false
                                     )
                                 )
 
+                                val episodes = cMap["episodes"] as? List<Map<String, Any>> ?: emptyList()
                                 episodes.forEachIndexed { index, epMap ->
-                                    val epId = epMap["id"] as? String ?: "ep_${index + 1}"
+                                    val epId = epMap["id"] as? String ?: "${courseId}_${index + 1}"
                                     val epTitle = epMap["title"] as? String ?: "Aula ${index + 1}"
-                                    val epDuration = epMap["duration"] as? String ?: "25 min"
-                                    val videoUrl = epMap["videoUrl"] as? String ?: ""
+                                    val epDuration = epMap["duration"] as? String ?: "30 min"
+                                    val youtubeId = epMap["youtubeId"] as? String ?: epMap["videoId"] as? String ?: ""
+                                    val videoUrl = if (youtubeId.isNotBlank()) {
+                                        if (youtubeId.startsWith("http")) youtubeId
+                                        else "https://www.youtube.com/watch?v=$youtubeId"
+                                    } else {
+                                        epMap["videoUrl"] as? String ?: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                                    }
 
                                     modulesList.add(
                                         ModuleEntity(
@@ -93,13 +187,59 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                             if (modulesList.isNotEmpty()) {
                                 dao.insertModules(modulesList)
                             }
-                            Log.d("TheoflixRepo", "Sincronizados ${coursesList.size} cursos e ${modulesList.size} aulas do OikoApp!")
                         }
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e("TheoflixRepo", "Falha na inicialização do Firestore listener: ${e.message}")
+            Log.e("TheoflixRepo", "Erro no listener de config/theoflix: ${e.message}")
+        }
+    }
+
+    /**
+     * Sincroniza o progresso do usuário cadastrado no OikoApp (Firestore -> Room)
+     */
+    fun syncUserProfileProgress() {
+        val currentUser = auth.currentUser ?: return
+        try {
+            firestore.collection("users").document(currentUser.uid)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
+
+                    val journey = snapshot.get("journey") as? Map<String, Any> ?: return@addSnapshotListener
+                    val theoflixProgress = journey["theoflixProgress"] as? Map<String, Any> ?: emptyMap()
+                    val theoflixModules = journey["theoflixModules"] as? Map<String, Any> ?: emptyMap()
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        // Mapeia os módulos assistidos
+                        theoflixModules.forEach { (modId, isDone) ->
+                            if (isDone == true) {
+                                dao.updateModuleCompletion(modId, true)
+                            }
+                        }
+
+                        // Mapeia progresso detalhado por curso
+                        theoflixProgress.forEach { (courseId, epsMap) ->
+                            if (epsMap is Map<*, *>) {
+                                epsMap.forEach { (epKey, status) ->
+                                    val isCompleted = status == true || status == "completed" || status == "done"
+                                    val modId = "${courseId}_$epKey"
+                                    dao.updateModuleCompletion(modId, isCompleted)
+                                    dao.insertOrUpdateProgress(
+                                        UserProgressEntity(
+                                            courseId = courseId,
+                                            moduleId = modId,
+                                            watched = true,
+                                            completed = isCompleted
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+        } catch (e: Exception) {
+            Log.e("TheoflixRepo", "Erro ao sincronizar progresso do usuário: ${e.message}")
         }
     }
 
@@ -164,7 +304,8 @@ class TheoflixRepository(private val dao: TheoflixDao) {
                         .set(
                             mapOf(
                                 "journey" to mapOf(
-                                    "theoflixModules" to mapOf(moduleId to true)
+                                    "theoflixModules" to mapOf(moduleId to true),
+                                    "theoflixProgress" to mapOf(courseId to mapOf(moduleId to true))
                                 )
                             ),
                             SetOptions.merge()

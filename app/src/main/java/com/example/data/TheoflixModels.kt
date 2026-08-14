@@ -21,7 +21,7 @@ data class Course(
     @PrimaryKey val id: String,
     val title: String,
     val description: String,
-    val thumbnailColor: String, // Color style hex/gradient key
+    val thumbnailColor: String, // Color style hex/gradient key or Image URL
     val category: String,
     val teacher: String,
     val duration: String,
@@ -84,6 +84,12 @@ interface TheoflixDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateProgress(progress: UserProgressEntity)
+
+    @Query("DELETE FROM courses WHERE id LIKE 'course_%'")
+    suspend fun deleteLegacyMockCourses()
+
+    @Query("DELETE FROM modules WHERE courseId LIKE 'course_%'")
+    suspend fun deleteLegacyMockModules()
 }
 
 @Database(
@@ -126,192 +132,145 @@ abstract class TheoflixDatabase : RoomDatabase() {
         suspend fun seedDatabase(dao: TheoflixDao) {
             val courses = listOf(
                 Course(
-                    id = "course_1",
-                    title = "Escola de Líderes - Mód. 1",
-                    description = "Fundamentação teológica e espiritual para todo cristão que deseja exercer o seu chamado com maturidade e excelência na igreja local.",
+                    id = "imersao",
+                    title = "Imersão (Batismo)",
+                    description = "Fundamentação doutrinária para o início da caminhada pública com Cristo. Prepare-se para um mergulho profundo na fé e no compromisso com o Reino.",
+                    thumbnailColor = "#1D4ED8", // Azul
+                    category = "Doutrina",
+                    teacher = "Pastoral IBM",
+                    duration = "4h 30min",
+                    isFavorite = true
+                ),
+                Course(
+                    id = "membros",
+                    title = "Curso de Membros",
+                    description = "Jornada de integração em 5 etapas fundamentais para quem deseja se tornar parte do organismo da Igreja. Entenda nossa história, visão e como você se encaixa.",
                     thumbnailColor = "#C5A059", // Dourado
-                    category = "Liderança",
-                    teacher = "Dra. Helena Santos",
-                    duration = "12 horas"
+                    category = "Integração",
+                    teacher = "Liderança IBM",
+                    duration = "7h 15min"
                 ),
                 Course(
-                    id = "course_2",
-                    title = "Formação de Líderes do GC",
-                    description = "Capacitação completa para pastoreio relacional, dinâmica de reuniões e multiplicação celular eficaz na comunidade.",
-                    thumbnailColor = "#1D4ED8", // Azul escuro
-                    category = "GC",
-                    teacher = "Pr. Tiago Silva",
-                    duration = "8 horas"
-                ),
-                Course(
-                    id = "course_3",
-                    title = "Paternidade & Casamento Saudável",
-                    description = "Estabelecendo os princípios eternos da Palavra de Deus para uma dinâmica familiar equilibrada, amorosa e focada em Cristo.",
-                    thumbnailColor = "#10B981", // Verde espiritual
-                    category = "Família",
-                    teacher = "Pr. Roberto & Aline Souza",
-                    duration = "6 horas"
-                ),
-                Course(
-                    id = "course_4",
-                    title = "Fundamentos Iniciais da Fé",
-                    description = "O ponto de partida essencial para novos convertidos e membros. Compreenda salvação, comunhão, estudo bíblico e discipulado.",
-                    thumbnailColor = "#8B5CF6", // Roxo teológico
-                    category = "Discipulado",
-                    teacher = "Prof. Marcos Oliveira",
-                    duration = "5 horas",
-                    isFavorite = true // Seed one as favorite
-                ),
-                Course(
-                    id = "course_5",
-                    title = "Doutrinas Teológicas Clássicas",
-                    description = "Uma jornada profunda e sistemática pelas principais doutrinas cristãs: Teologia Própria, Cristologia, Pneumatologia e Revelação.",
-                    thumbnailColor = "#EF4444", // Vermelho teologia
-                    category = "Teologia",
-                    teacher = "Dr. Carlos Menezes",
-                    duration = "10 horas"
-                ),
-                Course(
-                    id = "course_6",
-                    title = "Evangelismo de Impacto",
-                    description = "Aprenda abordagens dinâmicas, apologética básica e evangelismo relacional prático para cumprir a Grande Comissão no dia a dia.",
-                    thumbnailColor = "#F59E0B", // Laranja fogo
-                    category = "Evangelismo",
-                    teacher = "Ev. Lucas Rocha",
-                    duration = "4 horas"
+                    id = "crescer",
+                    title = "Curso Crescer",
+                    description = "Desenvolva sua maturidade cristã e entenda os princípios de uma vida frutífera no Reino. Este curso é o segundo passo fundamental na nossa trilha de crescimento espiritual.",
+                    thumbnailColor = "#10B981", // Verde
+                    category = "Maturidade",
+                    teacher = "Corpo Pastoral",
+                    duration = "6h 20min"
                 )
             )
 
             val modules = listOf(
-                // Course 1 Modules
+                // Imersao (Batismo)
                 ModuleEntity(
-                    id = "mod_1_1",
-                    courseId = "course_1",
-                    title = "O Chamado e o Caráter do Líder",
-                    duration = "25 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
+                    id = "imersao_1",
+                    courseId = "imersao",
+                    title = "Salvação, Arrependimento e Fé Proporcional",
+                    duration = "45 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_1_2",
-                    courseId = "course_1",
-                    title = "Gestão Ministerial e Autocuidado",
-                    duration = "30 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
+                    id = "imersao_2",
+                    courseId = "imersao",
+                    title = "O simbolismo bíblico do Batismo nas Águas",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_1_3",
-                    courseId = "course_1",
-                    title = "Comunicação Eficaz no Ministério",
-                    duration = "28 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
-                ),
-
-                // Course 2 Modules
-                ModuleEntity(
-                    id = "mod_2_1",
-                    courseId = "course_2",
-                    title = "A Visão do Grupo de Crescimento (GC)",
-                    duration = "15 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
+                    id = "imersao_3",
+                    courseId = "imersao",
+                    title = "A Ceia do Senhor: Memória e Esperança",
+                    duration = "40 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_2_2",
-                    courseId = "course_2",
-                    title = "Estrutura de Reunião e Dinâmicas",
-                    duration = "18 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
-                ),
-                ModuleEntity(
-                    id = "mod_2_3",
-                    courseId = "course_2",
-                    title = "Como Formar e Multiplicar o GC",
-                    duration = "22 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
+                    id = "imersao_4",
+                    courseId = "imersao",
+                    title = "Introdução às Disciplinas Espirituais",
+                    duration = "55 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
 
-                // Course 3 Modules
+                // Curso de Membros
                 ModuleEntity(
-                    id = "mod_3_1",
-                    courseId = "course_3",
-                    title = "O Altar Familiar e Práticas Devocionais",
-                    duration = "20 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
+                    id = "membros_1",
+                    courseId = "membros",
+                    title = "Aula 1: Introdução & História da IBM",
+                    duration = "60 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_3_2",
-                    courseId = "course_3",
-                    title = "Resolução de Conflitos no Casamento",
-                    duration = "24 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
+                    id = "membros_2",
+                    courseId = "membros",
+                    title = "Aula 2: DNA Ministerial & Visão de Células",
+                    duration = "75 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_3_3",
-                    courseId = "course_3",
-                    title = "Criando Filhos no Caminho do Senhor",
-                    duration = "27 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
-                ),
-
-                // Course 4 Modules
-                ModuleEntity(
-                    id = "mod_4_1",
-                    courseId = "course_4",
-                    title = "Salvação Plena pela Graça",
-                    duration = "15 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
+                    id = "membros_3",
+                    courseId = "membros",
+                    title = "Aula 3: Mordomia Cristã & Finanças do Reino",
+                    duration = "65 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_4_2",
-                    courseId = "course_4",
-                    title = "Iniciação à Oração Diária",
-                    duration = "18 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
+                    id = "membros_4",
+                    courseId = "membros",
+                    title = "Aula 4: Governança, Estatuto & Ética",
+                    duration = "70 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_4_3",
-                    courseId = "course_4",
-                    title = "A Importância do Corpo de Cristo",
-                    duration = "12 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
+                    id = "membros_5",
+                    courseId = "membros",
+                    title = "Aula 5: Comissionamento & Compromisso",
+                    duration = "90 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
 
-                // Course 5 Modules
+                // Curso Crescer
                 ModuleEntity(
-                    id = "mod_5_1",
-                    courseId = "course_5",
-                    title = "Introdução à Doutrina de Deus",
-                    duration = "32 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
+                    id = "crescer_1",
+                    courseId = "crescer",
+                    title = "Aula 1: A Base da Maturidade Cristã",
+                    duration = "55 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_5_2",
-                    courseId = "course_5",
-                    title = "Canonicidade e Revelação Escrita",
-                    duration = "35 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
+                    id = "crescer_2",
+                    courseId = "crescer",
+                    title = "Aula 2: Vida no Espírito e Santificação",
+                    duration = "60 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_5_3",
-                    courseId = "course_5",
-                    title = "Pneumatologia: A Pessoa do Espírito",
-                    duration = "30 min",
-                    videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4"
-                ),
-
-                // Course 6 Modules
-                ModuleEntity(
-                    id = "mod_6_1",
-                    courseId = "course_6",
-                    title = "Urgência da Grande Comissão",
-                    duration = "22 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
+                    id = "crescer_3",
+                    courseId = "crescer",
+                    title = "Aula 3: Caráter Cristão e o Fruto do Espírito",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 ),
                 ModuleEntity(
-                    id = "mod_6_2",
-                    courseId = "course_6",
-                    title = "Evangelismo Relacional Prático",
-                    duration = "25 min",
-                    videoUrl = "https://www.w3schools.com/html/movie.mp4"
+                    id = "crescer_4",
+                    courseId = "crescer",
+                    title = "Aula 4: Mordomia dos Dons e Vocação",
+                    duration = "65 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                ),
+                ModuleEntity(
+                    id = "crescer_5",
+                    courseId = "crescer",
+                    title = "Aula 5: Vida de Oração e Intimidade",
+                    duration = "45 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                ),
+                ModuleEntity(
+                    id = "crescer_6",
+                    courseId = "crescer",
+                    title = "Aula 6: Autoridade Espiritual e Submissão",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 )
             )
 
