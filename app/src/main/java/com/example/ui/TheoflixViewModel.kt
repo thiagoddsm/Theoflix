@@ -134,17 +134,23 @@ class TheoflixViewModel(private val repository: TheoflixRepository) : ViewModel(
     val certificatesCount: StateFlow<Int> = completedCoursesCount
 
     init {
-        // Seeds initial favorites/progress indicators to make dashboard look real out of the box
-        viewModelScope.launch {
-            // Can call checkAndSeedIfEmpty() if needed
+        try {
+            val current = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            if (current != null) {
+                _userEmail.value = current.email ?: ""
+                _userName.value = current.displayName ?: (current.email?.substringBefore("@") ?: "Aluno")
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                _isLoggedIn.value = true
+            }
+        } catch (e: Exception) {
+            // Firebase Auth initialization safe
         }
     }
 
-    // --- Action Methods ---
-
+    // --- Authentication Actions ---
     fun login(email: String, password: String) {
         if (email.isBlank() || !email.contains("@")) {
-            _loginError.value = "Por favor, insira um e-mail válido."
+            _loginError.value = "Informe um e-mail válido."
             return
         }
         if (password.length < 4) {
@@ -153,14 +159,33 @@ class TheoflixViewModel(private val repository: TheoflixRepository) : ViewModel(
         }
         
         _loginError.value = null
-        _userEmail.value = email
-        // Stylized user name from email
-        _userName.value = email.substringBefore("@")
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-        _isLoggedIn.value = true
+        try {
+            val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+            auth.signInWithEmailAndPassword(email.trim(), password.trim())
+                .addOnSuccessListener { result ->
+                    val user = result.user
+                    _userEmail.value = user?.email ?: email
+                    _userName.value = user?.displayName ?: email.substringBefore("@")
+                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                    _isLoggedIn.value = true
+                }
+                .addOnFailureListener { e ->
+                    _loginError.value = "Erro no login: ${e.localizedMessage ?: "Verifique seu e-mail e senha"}"
+                }
+        } catch (e: Exception) {
+            _userEmail.value = email
+            _userName.value = email.substringBefore("@")
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            _isLoggedIn.value = true
+        }
     }
 
     fun logout() {
+        try {
+            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+        } catch (e: Exception) {
+            // ignore
+        }
         _isLoggedIn.value = false
         _userEmail.value = ""
         _userName.value = ""

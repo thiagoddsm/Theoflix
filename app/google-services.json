@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "989586605112",
+    "project_id": "studio-1424813022-71754",
+    "storage_bucket": "studio-1424813022-71754.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:989586605112:android:theoflixapp",
+        "android_client_info": {
+          "package_name": "com.example"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOSAJ0WPPXAxbSMtiq7UZxkjzE6vizVq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
