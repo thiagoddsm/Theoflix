@@ -56,8 +56,10 @@ fun useTheoflixPlayer(
             settings.javaScriptEnabled = true
             settings.mediaPlaybackRequiresUserGesture = false
             settings.domStorageEnabled = true
+            settings.databaseEnabled = true
             settings.useWideViewPort = true
             settings.loadWithOverviewMode = true
+            settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -92,62 +94,26 @@ fun useTheoflixPlayer(
             <!DOCTYPE html>
             <html>
             <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                 <style>
-                    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
-                    #player { width: 100%; height: 100%; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    html, body { width: 100%; height: 100%; overflow: hidden; background-color: #000; }
+                    #player, iframe { width: 100%; height: 100%; border: none; }
                 </style>
-                <script src="https://www.youtube.com/iframe_api"></script>
             </head>
             <body>
-                <div id="player"></div>
+                <iframe 
+                    id="player"
+                    src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1&origin=https://ibmanha.com.br"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
                 <script>
-                    var player;
-                    function initPlayer() {
-                        player = new YT.Player('player', {
-                            height: '100%',
-                            width: '100%',
-                            videoId: '$videoId',
-                            playerVars: {
-                                'autoplay': 1,
-                                'controls': 1,
-                                'rel': 0,
-                                'showinfo': 0,
-                                'modestbranding': 1,
-                                'playsinline': 1
-                            },
-                            events: {
-                                'onReady': onPlayerReady,
-                                'onStateChange': onPlayerStateChange
-                            }
-                        });
-                    }
-
-                    // Compatible with other parts of the app, does not overwrite global namespace unsafely
-                    if (window.onYouTubeIframeAPIReady) {
-                        var oldCallback = window.onYouTubeIframeAPIReady;
-                        window.onYouTubeIframeAPIReady = function() {
-                            try { oldCallback(); } catch(e){}
-                            initPlayer();
-                        };
-                    } else {
-                        window.onYouTubeIframeAPIReady = function() {
-                            initPlayer();
-                        };
-                    }
-
-                    if (window.YT && window.YT.Player) {
-                        initPlayer();
-                    }
-
-                    function onPlayerReady(event) {
-                        TheoflixAndroid.onPlayerReady();
-                    }
-
-                    function onPlayerStateChange(event) {
-                        if (event.data === YT.PlayerState.ENDED) {
-                            TheoflixAndroid.onVideoEnded();
+                    window.addEventListener('load', function() {
+                        if (window.TheoflixAndroid) {
+                            window.TheoflixAndroid.onPlayerReady();
                         }
-                    }
+                    });
                 </script>
             </body>
             </html>
@@ -157,20 +123,22 @@ fun useTheoflixPlayer(
             <!DOCTYPE html>
             <html>
             <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                 <style>
-                    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; }
                     video { width: 100%; height: 100%; object-fit: contain; }
                 </style>
             </head>
             <body>
-                <video id="videoPlayer" src="$videoUrl" autoplay controls playsinline></video>
+                <video id="htmlVideo" controls autoplay playsinline src="$videoUrl"></video>
                 <script>
-                    var video = document.getElementById('videoPlayer');
+                    var video = document.getElementById('htmlVideo');
                     video.addEventListener('ended', function() {
-                        TheoflixAndroid.onVideoEnded();
+                        if (window.TheoflixAndroid) window.TheoflixAndroid.onVideoEnded();
                     });
                     video.addEventListener('canplay', function() {
-                        TheoflixAndroid.onPlayerReady();
+                        if (window.TheoflixAndroid) window.TheoflixAndroid.onPlayerReady();
                     });
                 </script>
             </body>
@@ -178,7 +146,7 @@ fun useTheoflixPlayer(
             """.trimIndent()
         }
 
-        webView.loadDataWithBaseURL("https://www.youtube.com", htmlContent, "text/html", "UTF-8", null)
+        webView.loadDataWithBaseURL("https://ibmanha.com.br", htmlContent, "text/html", "UTF-8", null)
 
         onDispose {
             webView.stopLoading()

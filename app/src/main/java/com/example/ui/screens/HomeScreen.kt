@@ -195,59 +195,53 @@ fun HomeScreen(
                         )
                     }
 
-                    // --- SECTION 2: Trilhas Recomendadas (Seed) ---
-                    val trilhas = courses.filter { it.category == "Liderança" || it.category == "GC" }
-                    StreamRowSection(
-                        title = "Trilhas Recomendadas",
-                        courses = trilhas,
-                        progressPercentages = progressPercentages,
-                        onCourseClick = onNavigateToCourse,
-                        viewModel = viewModel
-                    )
-
-                    // --- SECTION 3: Escola de Líderes ---
-                    val escolaLideres = courses.filter { it.category == "Liderança" }
-                    if (escolaLideres.isNotEmpty()) {
+                    // --- SECTION 2: NÍVEL 1 - FUNDAMENTOS ---
+                    val nivel1 = courses.filter { it.level == 1 || it.id == "batismo" || it.id == "pertencer" }
+                    if (nivel1.isNotEmpty()) {
                         StreamRowSection(
-                            title = "Escola de Líderes",
-                            courses = escolaLideres,
+                            title = "Nível 1: Fundamentos",
+                            courses = nivel1,
                             progressPercentages = progressPercentages,
                             onCourseClick = onNavigateToCourse,
                             viewModel = viewModel
                         )
                     }
 
-                    // --- SECTION 4: Discipulado ---
-                    val discipulado = courses.filter { it.category == "Discipulado" }
-                    if (discipulado.isNotEmpty()) {
+                    // --- SECTION 3: NÍVEL 2 - CONSOLIDAÇÃO ---
+                    val nivel2 = courses.filter { it.level == 2 || it.id == "crescer" || it.id == "cuidar" }
+                    if (nivel2.isNotEmpty()) {
                         StreamRowSection(
-                            title = "Discipulado",
-                            courses = discipulado,
+                            title = "Nível 2: Consolidação",
+                            courses = nivel2,
                             progressPercentages = progressPercentages,
                             onCourseClick = onNavigateToCourse,
                             viewModel = viewModel
                         )
                     }
 
-                    // --- SECTION 5: Família ---
-                    val familia = courses.filter { it.category == "Família" }
-                    if (familia.isNotEmpty()) {
+                    // --- SECTION 4: NÍVEL 3 - LIDERANÇA & MULTIPLICAÇÃO ---
+                    val nivel3 = courses.filter { it.level == 3 || it.id == "discipular" }
+                    if (nivel3.isNotEmpty()) {
                         StreamRowSection(
-                            title = "Família",
-                            courses = familia,
+                            title = "Nível 3: Liderança & Multiplicação",
+                            courses = nivel3,
                             progressPercentages = progressPercentages,
                             onCourseClick = onNavigateToCourse,
                             viewModel = viewModel
                         )
                     }
 
-                    // --- SECTION 6: Teologia ---
-                    val teologia = courses.filter { it.category == "Teologia" }
-                    if (teologia.isNotEmpty()) {
+                    // --- SECTION 5: NÍVEL 4 - ALTA GESTÃO & SUPERVISÃO ---
+                    val nivel4 = courses.filter { it.level == 4 || it.id == "papo_da_manha" }
+                    if (nivel4.isNotEmpty()) {
                         StreamRowSection(
-                            title = "Teologia",
-                            courses = teologia,
+                            title = "Nível 4: Alta Gestão & Supervisão",
+                            courses = nivel4,
                             progressPercentages = progressPercentages,
+                            onCourseClick = onNavigateToCourse,
+                            viewModel = viewModel
+                        )
+                    }
                             onCourseClick = onNavigateToCourse,
                             viewModel = viewModel
                         )

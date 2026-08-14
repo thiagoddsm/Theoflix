@@ -21,10 +21,11 @@ data class Course(
     @PrimaryKey val id: String,
     val title: String,
     val description: String,
-    val thumbnailColor: String, // Color style hex/gradient key or Image URL
+    val thumbnailColor: String, // Color style hex or image URL
     val category: String,
     val teacher: String,
     val duration: String,
+    val level: Int = 1,
     val isFavorite: Boolean = false
 )
 
@@ -49,7 +50,7 @@ data class UserProgressEntity(
 
 @Dao
 interface TheoflixDao {
-    @Query("SELECT * FROM courses")
+    @Query("SELECT * FROM courses ORDER BY level ASC")
     fun getAllCourses(): Flow<List<Course>>
 
     @Query("SELECT * FROM courses WHERE isFavorite = 1")
@@ -85,10 +86,10 @@ interface TheoflixDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateProgress(progress: UserProgressEntity)
 
-    @Query("DELETE FROM courses WHERE id LIKE 'course_%'")
+    @Query("DELETE FROM courses WHERE id LIKE 'course_%' OR id = 'imersao' OR id = 'membros'")
     suspend fun deleteLegacyMockCourses()
 
-    @Query("DELETE FROM modules WHERE courseId LIKE 'course_%'")
+    @Query("DELETE FROM modules WHERE courseId LIKE 'course_%' OR courseId = 'imersao' OR courseId = 'membros'")
     suspend fun deleteLegacyMockModules()
 }
 
@@ -131,146 +132,276 @@ abstract class TheoflixDatabase : RoomDatabase() {
 
         suspend fun seedDatabase(dao: TheoflixDao) {
             val courses = listOf(
+                // Nível 1: Fundamentos
                 Course(
-                    id = "imersao",
-                    title = "Imersão (Batismo)",
+                    id = "batismo",
+                    title = "Batismo",
                     description = "Fundamentação doutrinária para o início da caminhada pública com Cristo. Prepare-se para um mergulho profundo na fé e no compromisso com o Reino.",
                     thumbnailColor = "#1D4ED8", // Azul
-                    category = "Doutrina",
+                    category = "Obrigatório",
                     teacher = "Pastoral IBM",
-                    duration = "4h 30min",
+                    duration = "3h 10min",
+                    level = 1,
                     isFavorite = true
                 ),
                 Course(
-                    id = "membros",
-                    title = "Curso de Membros",
-                    description = "Jornada de integração em 5 etapas fundamentais para quem deseja se tornar parte do organismo da Igreja. Entenda nossa história, visão e como você se encaixa.",
-                    thumbnailColor = "#C5A059", // Dourado
-                    category = "Integração",
+                    id = "pertencer",
+                    title = "Pertencer",
+                    description = "Jornada de integração em 5 etapas fundamentais para quem deseja se tornar parte do organismo da Igreja Batista da Manhã.",
+                    thumbnailColor = "#2563EB", // Azul Royal
+                    category = "Obrigatório",
                     teacher = "Liderança IBM",
-                    duration = "7h 15min"
+                    duration = "1h 36min",
+                    level = 1
                 ),
+
+                // Nível 2: Consolidação
                 Course(
                     id = "crescer",
-                    title = "Curso Crescer",
-                    description = "Desenvolva sua maturidade cristã e entenda os princípios de uma vida frutífera no Reino. Este curso é o segundo passo fundamental na nossa trilha de crescimento espiritual.",
-                    thumbnailColor = "#10B981", // Verde
+                    title = "Crescer",
+                    description = "Desenvolva sua maturidade cristã e entenda os princípios de uma vida frutífera no Reino. Trilha essencial de crescimento espiritual.",
+                    thumbnailColor = "#E11D48", // Rose / Vinho
                     category = "Maturidade",
                     teacher = "Corpo Pastoral",
-                    duration = "6h 20min"
+                    duration = "6h 20min",
+                    level = 2
+                ),
+                Course(
+                    id = "cuidar",
+                    title = "Cuidar",
+                    description = "Capacitação para o cuidado relacional, discipulado de novos convertidos e pastoreio mútuo nas células da comunidade.",
+                    thumbnailColor = "#BE123C", // Rose Escuro
+                    category = "Pastoreio",
+                    teacher = "Liderança de Células",
+                    duration = "4h 40min",
+                    level = 2
+                ),
+
+                // Nível 3: Liderança & Multiplicação
+                Course(
+                    id = "discipular",
+                    title = "Discipular",
+                    description = "Escola de líderes e discipuladores para formação ministerial, pastoreio de líderes e multiplicação celular.",
+                    thumbnailColor = "#D97706", // Âmbar / Dourado
+                    category = "Liderança",
+                    teacher = "Pr. Sênior IBM",
+                    duration = "5h 15min",
+                    level = 3
+                ),
+
+                // Nível 4: Alta Gestão & Supervisão
+                Course(
+                    id = "papo_da_manha",
+                    title = "Papo da manhã",
+                    description = "Encontros de alinhamento, supervisão estratégica e mentoria ministerial com a alta liderança da igreja.",
+                    thumbnailColor = "#7C3AED", // Roxo
+                    category = "Alta Gestão",
+                    teacher = "Conselho Ministerial",
+                    duration = "3h 45min",
+                    level = 4
                 )
             )
 
             val modules = listOf(
-                // Imersao (Batismo)
+                // Batismo (Nível 1)
                 ModuleEntity(
-                    id = "imersao_1",
-                    courseId = "imersao",
-                    title = "Salvação, Arrependimento e Fé Proporcional",
+                    id = "batismo_1",
+                    courseId = "batismo",
+                    title = "Aula 1: Salvação, Arrependimento e Fé Proporcional",
                     duration = "45 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
-                    id = "imersao_2",
-                    courseId = "imersao",
-                    title = "O simbolismo bíblico do Batismo nas Águas",
+                    id = "batismo_2",
+                    courseId = "batismo",
+                    title = "Aula 2: O simbolismo bíblico do Batismo nas Águas",
                     duration = "50 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
-                    id = "imersao_3",
-                    courseId = "imersao",
-                    title = "A Ceia do Senhor: Memória e Esperança",
+                    id = "batismo_3",
+                    courseId = "batismo",
+                    title = "Aula 3: A Ceia do Senhor: Memória e Esperança",
                     duration = "40 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
-                    id = "imersao_4",
-                    courseId = "imersao",
-                    title = "Introdução às Disciplinas Espirituais",
+                    id = "batismo_4",
+                    courseId = "batismo",
+                    title = "Aula 4: Introdução às Disciplinas Espirituais",
                     duration = "55 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
 
-                // Curso de Membros
+                // Pertencer (Nível 1)
                 ModuleEntity(
-                    id = "membros_1",
-                    courseId = "membros",
+                    id = "pertencer_1",
+                    courseId = "pertencer",
                     title = "Aula 1: Introdução & História da IBM",
-                    duration = "60 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    duration = "20 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
-                    id = "membros_2",
-                    courseId = "membros",
+                    id = "pertencer_2",
+                    courseId = "pertencer",
                     title = "Aula 2: DNA Ministerial & Visão de Células",
-                    duration = "75 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    duration = "25 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
-                    id = "membros_3",
-                    courseId = "membros",
+                    id = "pertencer_3",
+                    courseId = "pertencer",
                     title = "Aula 3: Mordomia Cristã & Finanças do Reino",
-                    duration = "65 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    duration = "18 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
-                    id = "membros_4",
-                    courseId = "membros",
+                    id = "pertencer_4",
+                    courseId = "pertencer",
                     title = "Aula 4: Governança, Estatuto & Ética",
-                    duration = "70 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    duration = "20 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
-                    id = "membros_5",
-                    courseId = "membros",
+                    id = "pertencer_5",
+                    courseId = "pertencer",
                     title = "Aula 5: Comissionamento & Compromisso",
-                    duration = "90 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    duration = "23 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
 
-                // Curso Crescer
+                // Crescer (Nível 2)
                 ModuleEntity(
                     id = "crescer_1",
                     courseId = "crescer",
                     title = "Aula 1: A Base da Maturidade Cristã",
                     duration = "55 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
                     id = "crescer_2",
                     courseId = "crescer",
                     title = "Aula 2: Vida no Espírito e Santificação",
                     duration = "60 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
                     id = "crescer_3",
                     courseId = "crescer",
                     title = "Aula 3: Caráter Cristão e o Fruto do Espírito",
                     duration = "50 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
                     id = "crescer_4",
                     courseId = "crescer",
                     title = "Aula 4: Mordomia dos Dons e Vocação",
                     duration = "65 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
                     id = "crescer_5",
                     courseId = "crescer",
                     title = "Aula 5: Vida de Oração e Intimidade",
                     duration = "45 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 ),
                 ModuleEntity(
                     id = "crescer_6",
                     courseId = "crescer",
                     title = "Aula 6: Autoridade Espiritual e Submissão",
                     duration = "50 min",
-                    videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+
+                // Cuidar (Nível 2)
+                ModuleEntity(
+                    id = "cuidar_1",
+                    courseId = "cuidar",
+                    title = "Aula 1: O Coração do Cuidador",
+                    duration = "45 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "cuidar_2",
+                    courseId = "cuidar",
+                    title = "Aula 2: Escuta Empática e Aconselhamento Bíblico",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "cuidar_3",
+                    courseId = "cuidar",
+                    title = "Aula 3: Acompanhamento de Novos Decididos",
+                    duration = "45 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "cuidar_4",
+                    courseId = "cuidar",
+                    title = "Aula 4: Intercessão e Batalha Espiritual",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+
+                // Discipular (Nível 3)
+                ModuleEntity(
+                    id = "discipular_1",
+                    courseId = "discipular",
+                    title = "Aula 1: O Modelo de Jesus para o Discipulado",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "discipular_2",
+                    courseId = "discipular",
+                    title = "Aula 2: Formando Discípulos Multiplicadores",
+                    duration = "55 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "discipular_3",
+                    courseId = "discipular",
+                    title = "Aula 3: Gestão e Dinâmica do Grupo de Crescimento",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "discipular_4",
+                    courseId = "discipular",
+                    title = "Aula 4: Enviando e Comissionando Novos Líderes",
+                    duration = "60 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+
+                // Papo da manhã (Nível 4)
+                ModuleEntity(
+                    id = "papo_1",
+                    courseId = "papo_da_manha",
+                    title = "Episódio 1: Visão Estratégica e Alinhamento Ministerial",
+                    duration = "45 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "papo_2",
+                    courseId = "papo_da_manha",
+                    title = "Episódio 2: Cultura de Honra e Excelência",
+                    duration = "40 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "papo_3",
+                    courseId = "papo_da_manha",
+                    title = "Episódio 3: Mentoria Pastoral e Pastoreio de Pastores",
+                    duration = "50 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
+                ),
+                ModuleEntity(
+                    id = "papo_4",
+                    courseId = "papo_da_manha",
+                    title = "Episódio 4: Liderança Sob Pressão e Resiliência",
+                    duration = "45 min",
+                    videoUrl = "https://www.youtube.com/watch?v=7wfYIMvS_9g"
                 )
             )
 
