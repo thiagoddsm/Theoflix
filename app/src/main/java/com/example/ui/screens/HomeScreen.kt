@@ -242,10 +242,6 @@ fun HomeScreen(
                             viewModel = viewModel
                         )
                     }
-                            onCourseClick = onNavigateToCourse,
-                            viewModel = viewModel
-                        )
-                    }
 
                     // --- SECTION 7: Cursos Recentes ---
                     StreamRowSection(
