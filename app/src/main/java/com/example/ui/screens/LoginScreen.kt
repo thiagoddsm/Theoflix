@@ -213,102 +213,16 @@ fun LoginScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Action links
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Criar conta",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = GoldPrimary,
-                        modifier = Modifier
-                            .clickable { /* No action target for V1 */ }
-                            .padding(4.dp)
-                    )
-
-                    Text(
-                        text = "Esqueci minha senha",
-                        fontSize = 13.sp,
-                        color = Color.LightGray.copy(alpha = 0.8f),
-                        modifier = Modifier
-                            .clickable { /* No action target for V1 */ }
-                            .padding(4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Google Login Integration
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Divider(
-                    modifier = Modifier.weight(1f),
-                    color = Color.White.copy(alpha = 0.1f)
-                )
+                // Informative helper message
                 Text(
-                    text = "OU ENTRAR COM",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    text = "Acesse utilizando as mesmas credenciais da sua conta no OikoApp.",
+                    fontSize = 12.sp,
+                    color = Color.LightGray.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Divider(
-                    modifier = Modifier.weight(1f),
-                    color = Color.White.copy(alpha = 0.1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Google login button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White.copy(alpha = 0.05f))
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                    .clickable {
-                        // Quick Google login seed
-                        viewModel.login("thiagoddsm@gmail.com", "123456")
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    // Placeholder simple visual branding for Google
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "G",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                            color = Color(0xFF4285F4)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Continuar com o Google",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
             
             Spacer(modifier = Modifier.height(30.dp))
