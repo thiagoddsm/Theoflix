@@ -12,8 +12,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 class TheoflixViewModel(private val repository: TheoflixRepository) : ViewModel() {
 
@@ -89,15 +92,11 @@ class TheoflixViewModel(private val repository: TheoflixRepository) : ViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     // Active Course modules
+    @OptIn(ExperimentalCoroutinesApi::class)
     val currentCourseModules: StateFlow<List<ModuleEntity>> = _selectedCourseId
-        .combine(allUserProgress) { courseId, progressList ->
-            if (courseId == null) return@combine emptyList()
-            // Collect flow from db and inject transient completion details
-            var list = emptyList<ModuleEntity>()
-            repository.getModulesForCourse(courseId).collect {
-                list = it
-            }
-            list
+        .flatMapLatest { courseId ->
+            if (courseId == null) flowOf(emptyList())
+            else repository.getModulesForCourse(courseId)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // --- Home view dynamic groupings ---
