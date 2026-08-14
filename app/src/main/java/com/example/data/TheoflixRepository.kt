@@ -29,6 +29,14 @@ class TheoflixRepository(private val dao: TheoflixDao) {
      * Sincroniza em tempo real os cursos do OikoApp (tanto da coleção theoflix_courses
      * quanto do documento config/theoflix).
      */
+    suspend fun ensureOfficialCourses() {
+        try {
+            TheoflixDatabase.seedDatabase(dao)
+        } catch (e: Exception) {
+            Log.e("TheoflixRepo", "Erro no seed: ${e.message}")
+        }
+    }
+
     fun startRealtimeSync() {
         // 1. Limpa o banco local e semeia os 6 cursos oficiais imediatamente
         CoroutineScope(Dispatchers.IO).launch {

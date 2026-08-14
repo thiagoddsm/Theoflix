@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -118,8 +119,25 @@ fun LoginScreen(
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 0.5.sp,
-                modifier = Modifier.padding(bottom = 44.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
+
+            // Badge de Versão Oficial
+            Surface(
+                color = GoldPrimary.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, GoldPrimary.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.padding(bottom = 32.dp)
+            ) {
+                Text(
+                    text = "v2.0.0 • IBM OFICIAL (6 CURSOS)",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp,
+                    color = GoldPrimary,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
 
             // Login inputs container card style
             Column(
