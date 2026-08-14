@@ -20,13 +20,33 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  signingConfigs {
+    create("release") {
+      val keystoreFile = file("../theoflix-release.jks")
+      if (keystoreFile.exists()) {
+        storeFile = keystoreFile
+        storePassword = "theoflix123"
+        keyAlias = "theoflix"
+        keyPassword = "theoflix123"
+      }
+    }
+  }
+
   buildTypes {
     release {
       isCrunchPngs = false
       isMinifyEnabled = false
+      val keystoreFile = file("../theoflix-release.jks")
+      if (keystoreFile.exists()) {
+        signingConfig = signingConfigs.getByName("release")
+      }
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
     debug {
+      val keystoreFile = file("../theoflix-release.jks")
+      if (keystoreFile.exists()) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
   }
   compileOptions {
@@ -50,6 +70,7 @@ dependencies {
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.firestore)
   implementation(libs.firebase.auth)
+  implementation(libs.play.services.auth)
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)
   // implementation(libs.androidx.camera.camera2)

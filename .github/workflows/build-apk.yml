@@ -28,6 +28,24 @@ jobs:
           sudo unzip -q -d /opt/gradle /tmp/gradle-8.10.2-bin.zip
           echo "/opt/gradle/gradle-8.10.2/bin" >> $GITHUB_PATH
 
+      - name: Prepare Keystore and Extract SHA
+        id: keystore
+        run: |
+          if [ ! -f theoflix-release.jks ]; then
+            keytool -genkey -v -keystore theoflix-release.jks -alias theoflix -keyalg RSA -keysize 2048 -validity 10000 -storepass theoflix123 -keypass theoflix123 -dname "CN=Theoflix, OU=Oiko, O=OikoApp, L=SaoPaulo, ST=SP, C=BR"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add theoflix-release.jks
+            git commit -m "chore: adiciona theoflix-release.jks permanente"
+            git push origin main
+          fi
+          SHA1_VAL=$(keytool -list -v -keystore theoflix-release.jks -alias theoflix -storepass theoflix123 | grep "SHA1:" | head -n 1 | awk '{print $2}')
+          SHA256_VAL=$(keytool -list -v -keystore theoflix-release.jks -alias theoflix -storepass theoflix123 | grep "SHA256:" | head -n 1 | awk '{print $2}')
+          echo "SHA1=$SHA1_VAL" >> $GITHUB_ENV
+          echo "SHA256=$SHA256_VAL" >> $GITHUB_ENV
+          echo "SHA-1: $SHA1_VAL"
+          echo "SHA-256: $SHA256_VAL"
+
       - name: Build Debug APK
         run: |
           /opt/gradle/gradle-8.10.2/bin/gradle assembleDebug -x test --no-daemon --stacktrace > build.log 2>&1 || {
@@ -56,13 +74,16 @@ jobs:
           prerelease: false
           body: |
             ## 📱 Theoflix Android APK
-            Versão mais recente compilada automaticamente via GitHub Actions e integrada ao OikoApp.
+            Versão oficial compilada via CI com suporte nativo a Google Sign-In e E-mail/Senha do OikoApp.
+            
+            ### 🔑 Chaves SHA para o Firebase Console:
+            - **SHA-1**: `${{ env.SHA1 }}`
+            - **SHA-256**: `${{ env.SHA256 }}`
             
             ### ✨ Recursos:
-            - Catálogo de cursos integrado em tempo real ao Firebase Firestore do OikoApp
-            - Login unificado com a conta do OikoApp (Firebase Auth)
-            - Player com histórico de visualização e progresso salvo
-            - Suporte a modo offline
+            - Login nativo do Google e Login com E-mail/Senha do OikoApp
+            - Catálogo e módulos sincronizados em tempo real com o Firestore
+            - Player com histórico e progresso salvo
           files: app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

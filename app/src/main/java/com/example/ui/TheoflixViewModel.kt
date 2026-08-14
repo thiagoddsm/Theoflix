@@ -179,6 +179,29 @@ class TheoflixViewModel(private val repository: TheoflixRepository) : ViewModel(
         }
     }
 
+    fun loginWithGoogle(idToken: String) {
+        _loginError.value = null
+        try {
+            val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+            com.google.firebase.auth.FirebaseAuth.getInstance().signInWithCredential(credential)
+                .addOnSuccessListener { result ->
+                    val user = result.user
+                    _userEmail.value = user?.email ?: ""
+                    _userName.value = user?.displayName ?: "Aluno"
+                    _isLoggedIn.value = true
+                }
+                .addOnFailureListener { e ->
+                    _loginError.value = "Erro ao autenticar com o Google: ${e.localizedMessage}"
+                }
+        } catch (e: Exception) {
+            _loginError.value = "Erro: ${e.message}"
+        }
+    }
+
+    fun setLoginError(error: String?) {
+        _loginError.value = error
+    }
+
     fun logout() {
         try {
             com.google.firebase.auth.FirebaseAuth.getInstance().signOut()

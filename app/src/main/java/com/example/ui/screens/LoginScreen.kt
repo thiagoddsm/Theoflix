@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -30,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.TheoflixViewModel
 import com.example.ui.theme.GoldPrimary
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,11 +43,34 @@ fun LoginScreen(
     viewModel: TheoflixViewModel,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var email by remember { mutableStateFlowOf("") }
     var password by remember { mutableStateFlowOf("") }
     var passwordVisible by remember { mutableStateFlowOf(false) }
 
     val loginError by viewModel.loginError.collectAsState()
+
+    // OAuth 2.0 Web Client ID from official google-services.json
+    val webClientId = "989586605112-pl638euilgmaki5i1e5cuna6le80nu27.apps.googleusercontent.com"
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account?.idToken
+            if (idToken != null) {
+                viewModel.loginWithGoogle(idToken)
+            } else {
+                viewModel.setLoginError("Token do Google não retornado. Verifique a configuração do SHA-1 no Firebase.")
+            }
+        } catch (e: ApiException) {
+            viewModel.setLoginError("Erro Google Sign-In (código ${e.statusCode}): ${e.localizedMessage}")
+        } catch (e: Exception) {
+            viewModel.setLoginError("Erro ao autenticar com Google: ${e.message}")
+        }
+    }
 
     // Smooth gradient backgrounds matching streaming visual aesthetics
     val backgroundBrush = Brush.verticalGradient(
@@ -113,7 +142,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("E-mail ou Usuário") },
+                    label = { Text("E-mail do OikoApp") },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Email,
@@ -215,14 +244,88 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Informative helper message
                 Text(
-                    text = "Acesse utilizando as mesmas credenciais da sua conta no OikoApp.",
+                    text = "Acesse utilizando seu e-mail e senha ou sua conta Google do OikoApp.",
                     fontSize = 12.sp,
                     color = Color.LightGray.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Google Login Integration
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.1f)
+                )
+                Text(
+                    text = "OU ENTRAR COM",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Official Google login button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                    .clickable {
+                        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestIdToken(webClientId)
+                            .requestEmail()
+                            .build()
+                        val client = GoogleSignIn.getClient(context, gso)
+                        // Sign out first so Google always displays the account chooser dialog
+                        client.signOut().addOnCompleteListener {
+                            googleSignInLauncher.launch(client.signInIntent)
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "G",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color(0xFF4285F4)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Continuar com o Google",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(30.dp))
