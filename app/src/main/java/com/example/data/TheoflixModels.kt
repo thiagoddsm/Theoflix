@@ -95,7 +95,7 @@ interface TheoflixDao {
 
 @Database(
     entities = [Course::class, ModuleEntity::class, UserProgressEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class TheoflixDatabase : RoomDatabase() {
@@ -112,6 +112,7 @@ abstract class TheoflixDatabase : RoomDatabase() {
                     TheoflixDatabase::class.java,
                     "theoflix_database"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(TheoflixDatabaseCallback())
                     .build()
                 INSTANCE = instance

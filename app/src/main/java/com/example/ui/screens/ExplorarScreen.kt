@@ -41,15 +41,15 @@ fun ExplorarScreen(
     val courses by viewModel.allCourses.collectAsState()
     val progressPercentages by viewModel.courseProgressPercentages.collectAsState()
 
-    // Supported categories
+    // Supported categories aligning with IBM Church Levels & Tracks
     val categories = listOf(
-        CategoryItem("Liderança", Icons.Default.Shield, Color(0xFFC5A059)),
-        CategoryItem("Família", Icons.Default.Home, Color(0xFF10B981)),
-        CategoryItem("GC", Icons.Default.Groups, Color(0xFF3B82F6)),
-        CategoryItem("Discipulado", Icons.Default.AutoStories, Color(0xFF8B5CF6)),
-        CategoryItem("Ministérios", Icons.Default.VolunteerActivism, Color(0xFFEC4899)),
-        CategoryItem("Teologia", Icons.Default.MenuBook, Color(0xFFEF4444)),
-        CategoryItem("Evangelismo", Icons.Default.Campaign, Color(0xFFF59E0B))
+        CategoryItem("Fundamentos", Icons.Default.Shield, Color(0xFF1D4ED8)),
+        CategoryItem("Consolidação", Icons.Default.Home, Color(0xFFE11D48)),
+        CategoryItem("Liderança", Icons.Default.Groups, Color(0xFFD97706)),
+        CategoryItem("Alta Gestão", Icons.Default.AutoStories, Color(0xFF7C3AED)),
+        CategoryItem("Obrigatório", Icons.Default.VolunteerActivism, Color(0xFF2563EB)),
+        CategoryItem("Maturidade", Icons.Default.MenuBook, Color(0xFFBE123C)),
+        CategoryItem("Pastoreio", Icons.Default.Campaign, Color(0xFFF59E0B))
     )
 
     // useDeferredValue equivalent in Jetpack Compose to optimize heavy search filters
