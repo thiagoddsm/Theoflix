@@ -9,6 +9,25 @@
       "client_info": {
         "mobilesdk_app_id": "1:989586605112:android:theoflixapp",
         "android_client_info": {
+          "package_name": "com.theoflix.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOSAJ0WPPXAxbSMtiq7UZxkjzE6vizVq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:989586605112:android:theoflixapp2",
+        "android_client_info": {
           "package_name": "com.example"
         }
       },
